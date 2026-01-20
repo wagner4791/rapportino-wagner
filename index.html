@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generatore Rapportino Wagner</title>
+<style>
+    body { font-family: sans-serif; padding: 20px; background-color: #f4f4f4; }
+    h2 { text-align: center; color: #333; }
+    
+    .container { max-width: 600px; margin: 0 auto; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    
+    button { 
+        width: 100%; 
+        padding: 15px; 
+        background-color: #28a745; 
+        color: white; 
+        border: none; 
+        border-radius: 5px; 
+        font-size: 18px; 
+        cursor: pointer; 
+        margin-bottom: 20px;
+    }
+    button:active { background-color: #218838; }
+    
+    .total-box { 
+        text-align: center; 
+        font-weight: bold; 
+        margin-bottom: 10px; 
+        font-size: 18px;
+        color: #007bff;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    td { padding: 8px; border-bottom: 1px solid #ddd; }
+    .minutes { font-weight: bold; text-align: right; }
+    .zero { color: #ccc; }
+    .highlight { color: #000; background-color: #e8f5e9; }
+    
+    .prio-high { border-left: 4px solid #dc3545; }
+    .prio-med { border-left: 4px solid #ffc107; }
+    .prio-low { border-left: 4px solid #17a2b8; }
+    .fixed { border-left: 4px solid #6c757d; }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Generatore Rapportino</h2>
+    <div class="total-box" id="totaleDisplay">Premi il pulsante per iniziare</div>
+    <button onclick="generaGiornata()">GENERA GIORNATA</button>
+    
+    <table id="listaAttivita">
+        </table>
+</div>
+
+<script>
+// La tua lista esatta
+const attivita = [
+    "MALATTIA", "PERMESSO", "FESTIVITÀ", "FERIE", "TRASFERTA", "PAUSA", // 0-5
+    "INVIO MATERIALE INCOMING", "VERIFICA QTY MERCE ARRIVATA", "UBICAZIONE MERCE", "AGGIORNAMENTO WEEK", // 6-9
+    "STAMPA SCHEDA MONTAGGIO", "STAMPA SCHEDA PMI", "PRELIEVO COMMESSA", "PRELIEVO PMI", "AGGIORNAMENTO GIORNALIERO", // 10-14
+    "CONSEGNA COMMESSE IN PRODUZIONE", "RISOLUZIONE PROBLEMA", "SUPPORTO UFFICIO TECNICO", "RICHIESTE COLLAUDO", "MATERIALE SHELL TEST", // 15-19
+    "PRELIEVO VENDITA", "ORGANIZZAZIONE MAGAZZINO (pulizia, ecc..)", "CHIAMATE TELEFONICHE", "USCITA CONSEGNA / RITIRO", "EMAIL LETTURA / RISPOSTA", // 20-24
+    "CHECK MANUTENZIONE MULETTO", "BIDONE GRASSO MONTAGGIO", "INTEGRAZIONE MATERIALE COMMESSA", "PRELIEVO NON PIANIFICATO", "INTERVENTO INFORMATICO", // 25-29
+    "CARICO / SCARICO CAMION", "VERIFICA MATERIALI MANCANTI", "ASSEGNAZIONE MATERIALE", "CAMBIO MATERIALE MONTAGGIO", "COMPILAZIONE ORE", "INVENTARIO SPOT" // 30-35
+];
+
+function generaGiornata() {
+    let valori = new Array(36).fill(0);
+    let minutiTotali = 480;
+    
+    // --- 1. FISSI ---
+    valori[5] = 30;  // Pausa
+    valori[14] = 10; // Agg. Giornaliero
+    valori[25] = 5;  // Check Muletto
+    valori[34] = 5;  // Compilazione Ore
+    
+    let minutiFissi = 30 + 10 + 5 + 5;
+    let daDistribuire = minutiTotali - minutiFissi;
+
+    // --- 2. PRIORITÀ ---
+    // Indici corretti basati sulla lista (0 = Malattia)
+    let highPrio = [10, 16, 27]; // Stampa Montaggio, Risoluzione, Integrazione
+    let medPrio = [8, 9, 11, 24, 31, 32]; // Ubicazione, Agg Week, Stampa PMI, Email, Mancanti, Assegnazione
+    let lowPrio = [7, 21, 22]; // Verifica Qty, Organizzazione, Chiamate
+
+    // Minimo garantito
+    highPrio.forEach(i => { valori[i] = 40; daDistribuire -= 40; });
+    medPrio.forEach(i => { valori[i] = 20; daDistribuire -= 20; });
+    lowPrio.forEach(i => { valori[i] = 10; daDistribuire -= 10; });
+
+    // --- 3. LOTTERIA (Distribuzione Casuale) ---
+    let pool = [];
+    highPrio.forEach(i => { for(let k=0; k<5; k++) pool.push(i); }); // 5 biglietti
+    medPrio.forEach(i => { for(let k=0; k<2; k++) pool.push(i); });  // 2 biglietti
+    lowPrio.forEach(i => { pool.push(i); });                         // 1 biglietto
+
+    while (daDistribuire > 0) {
+        let rigaCasuale = pool[Math.floor(Math.random() * pool.length)];
+        valori[rigaCasuale] += 5;
+        daDistribuire -= 5;
+    }
+
+    // --- 4. DISPALY HTML ---
+    let html = "";
+    let totaleReale = 0;
+    
+    for (let i = 0; i < attivita.length; i++) {
+        totaleReale += valori[i];
+        let styleClass = "";
+        
+        // Assegno colori per capire visivamente le priorità
+        if([5,14,25,34].includes(i)) styleClass = "fixed";
+        else if(highPrio.includes(i)) styleClass = "prio-high";
+        else if(medPrio.includes(i)) styleClass = "prio-med";
+        else if(lowPrio.includes(i)) styleClass = "prio-low";
+
+        // Mostra solo se > 0 oppure mostra tutto in grigio se 0
+        let valClass = valori[i] > 0 ? "minutes highlight" : "minutes zero";
+        
+        html += `<tr>
+            <td class="${styleClass}">${attivita[i]}</td>
+            <td class="${valClass}">${valori[i]}</td>
+        </tr>`;
+    }
+    
+    document.getElementById("listaAttivita").innerHTML = html;
+    document.getElementById("totaleDisplay").innerText = "Totale Generato: " + totaleReale + " min";
+}
+</script>
+
+</body>
+</html>
