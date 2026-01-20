@@ -3,60 +3,94 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Generatore Rapportino Wagner</title>
+<title>Rapportino Wagner 2.0</title>
 <style>
-    body { font-family: sans-serif; padding: 20px; background-color: #f4f4f4; }
-    h2 { text-align: center; color: #333; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 10px; background-color: #f0f2f5; color: #333; }
+    h2 { text-align: center; margin-bottom: 10px; font-size: 1.2rem; }
     
-    .container { max-width: 600px; margin: 0 auto; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .container { max-width: 600px; margin: 0 auto; background: white; padding: 10px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    
+    .btn-container { position: sticky; top: 0; background: white; padding: 10px 0; z-index: 10; border-bottom: 1px solid #eee; }
     
     button { 
         width: 100%; 
-        padding: 15px; 
-        background-color: #28a745; 
+        padding: 12px; 
+        background-color: #007bff; 
         color: white; 
         border: none; 
-        border-radius: 5px; 
-        font-size: 18px; 
+        border-radius: 8px; 
+        font-size: 16px; 
+        font-weight: bold;
         cursor: pointer; 
-        margin-bottom: 20px;
+        box-shadow: 0 2px 5px rgba(0,123,255,0.3);
     }
-    button:active { background-color: #218838; }
+    button:active { transform: scale(0.98); }
     
-    .total-box { 
+    .info-box { 
         text-align: center; 
         font-weight: bold; 
-        margin-bottom: 10px; 
-        font-size: 18px;
-        color: #007bff;
+        margin: 5px 0; 
+        font-size: 16px;
+        color: #28a745;
+    }
+    .error { color: #dc3545; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+    td { padding: 8px 5px; border-bottom: 1px solid #f1f1f1; vertical-align: middle; }
+    
+    /* Stile della colonna nomi */
+    .col-name { font-size: 14px; line-height: 1.2; }
+    
+    /* Input numerico */
+    input[type="number"] {
+        width: 50px;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        text-align: center;
+        font-size: 16px;
+        font-weight: bold;
+        background-color: #fff;
+        color: #333;
+    }
+    
+    input[type="number"]:focus {
+        border-color: #007bff;
+        outline: none;
+        background-color: #eef7ff;
     }
 
-    table { width: 100%; border-collapse: collapse; }
-    td { padding: 8px; border-bottom: 1px solid #ddd; }
-    .minutes { font-weight: bold; text-align: right; }
-    .zero { color: #ccc; }
-    .highlight { color: #000; background-color: #e8f5e9; }
-    
-    .prio-high { border-left: 4px solid #dc3545; }
-    .prio-med { border-left: 4px solid #ffc107; }
-    .prio-low { border-left: 4px solid #17a2b8; }
-    .fixed { border-left: 4px solid #6c757d; }
+    /* Stili per le priorità (barretta colorata a sinistra) */
+    .row-item { border-left: 4px solid transparent; }
+    .prio-high { border-left-color: #dc3545; } /* Rosso */
+    .prio-med { border-left-color: #ffc107; }  /* Giallo */
+    .prio-low { border-left-color: #17a2b8; }  /* Azzurro */
+    .fixed { border-left-color: #343a40; background-color: #f8f9fa; }     /* Grigio */
+
+    /* I fissi non si possono modificare facilmente */
+    input.readonly { background-color: #e9ecef; color: #6c757d; border: none; }
+
+    .help-text { font-size: 12px; color: #666; text-align: center; margin-bottom: 10px; font-style: italic;}
 </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Generatore Rapportino</h2>
-    <div class="total-box" id="totaleDisplay">Premi il pulsante per iniziare</div>
-    <button onclick="generaGiornata()">GENERA GIORNATA</button>
+    <h2>Rapportino Wagner</h2>
+    <div class="help-text">Modifica un numero e il totale si aggiusta da solo.</div>
+    
+    <div class="btn-container">
+        <div class="info-box" id="totaleDisplay">Totale: 0 min</div>
+        <button onclick="generaGiornataIniziale()">🔄 GENERA GIORNATA CASUALE</button>
+    </div>
     
     <table id="listaAttivita">
         </table>
 </div>
 
 <script>
-// La tua lista esatta
-const attivita = [
+// --- DATI ---
+const nomiAttivita = [
     "MALATTIA", "PERMESSO", "FESTIVITÀ", "FERIE", "TRASFERTA", "PAUSA", // 0-5
     "INVIO MATERIALE INCOMING", "VERIFICA QTY MERCE ARRIVATA", "UBICAZIONE MERCE", "AGGIORNAMENTO WEEK", // 6-9
     "STAMPA SCHEDA MONTAGGIO", "STAMPA SCHEDA PMI", "PRELIEVO COMMESSA", "PRELIEVO PMI", "AGGIORNAMENTO GIORNALIERO", // 10-14
@@ -66,68 +100,169 @@ const attivita = [
     "CARICO / SCARICO CAMION", "VERIFICA MATERIALI MANCANTI", "ASSEGNAZIONE MATERIALE", "CAMBIO MATERIALE MONTAGGIO", "COMPILAZIONE ORE", "INVENTARIO SPOT" // 30-35
 ];
 
-function generaGiornata() {
-    let valori = new Array(36).fill(0);
+// Indici speciali
+const indiciFissi = [5, 14, 25, 34]; // Pausa, Aggiornamento, Check Muletto, Ore
+const highPrio = [10, 16, 27]; 
+const medPrio = [8, 9, 11, 24, 31, 32];
+const lowPrio = [7, 21, 22];
+
+// Stato attuale dei minuti
+let valori = new Array(36).fill(0);
+
+// --- FUNZIONI ---
+
+function generaGiornataIniziale() {
+    valori.fill(0);
     let minutiTotali = 480;
     
-    // --- 1. FISSI ---
-    valori[5] = 30;  // Pausa
-    valori[14] = 10; // Agg. Giornaliero
-    valori[25] = 5;  // Check Muletto
-    valori[34] = 5;  // Compilazione Ore
+    // 1. Assegna Fissi
+    valori[5] = 30;  
+    valori[14] = 10; 
+    valori[25] = 5;  
+    valori[34] = 5;  
     
-    let minutiFissi = 30 + 10 + 5 + 5;
-    let daDistribuire = minutiTotali - minutiFissi;
+    let daDistribuire = minutiTotali - (30+10+5+5);
 
-    // --- 2. PRIORITÀ ---
-    // Indici corretti basati sulla lista (0 = Malattia)
-    let highPrio = [10, 16, 27]; // Stampa Montaggio, Risoluzione, Integrazione
-    let medPrio = [8, 9, 11, 24, 31, 32]; // Ubicazione, Agg Week, Stampa PMI, Email, Mancanti, Assegnazione
-    let lowPrio = [7, 21, 22]; // Verifica Qty, Organizzazione, Chiamate
-
-    // Minimo garantito
+    // 2. Base Priorità
     highPrio.forEach(i => { valori[i] = 40; daDistribuire -= 40; });
     medPrio.forEach(i => { valori[i] = 20; daDistribuire -= 20; });
     lowPrio.forEach(i => { valori[i] = 10; daDistribuire -= 10; });
 
-    // --- 3. LOTTERIA (Distribuzione Casuale) ---
+    // 3. Lotteria per il resto
     let pool = [];
-    highPrio.forEach(i => { for(let k=0; k<5; k++) pool.push(i); }); // 5 biglietti
-    medPrio.forEach(i => { for(let k=0; k<2; k++) pool.push(i); });  // 2 biglietti
-    lowPrio.forEach(i => { pool.push(i); });                         // 1 biglietto
+    highPrio.forEach(i => { for(let k=0; k<5; k++) pool.push(i); });
+    medPrio.forEach(i => { for(let k=0; k<2; k++) pool.push(i); });
+    lowPrio.forEach(i => { pool.push(i); });
 
     while (daDistribuire > 0) {
-        let rigaCasuale = pool[Math.floor(Math.random() * pool.length)];
-        valori[rigaCasuale] += 5;
+        let riga = pool[Math.floor(Math.random() * pool.length)];
+        valori[riga] += 5;
         daDistribuire -= 5;
     }
 
-    // --- 4. DISPALY HTML ---
-    let html = "";
-    let totaleReale = 0;
-    
-    for (let i = 0; i < attivita.length; i++) {
-        totaleReale += valori[i];
-        let styleClass = "";
-        
-        // Assegno colori per capire visivamente le priorità
-        if([5,14,25,34].includes(i)) styleClass = "fixed";
-        else if(highPrio.includes(i)) styleClass = "prio-high";
-        else if(medPrio.includes(i)) styleClass = "prio-med";
-        else if(lowPrio.includes(i)) styleClass = "prio-low";
+    renderTable();
+}
 
-        // Mostra solo se > 0 oppure mostra tutto in grigio se 0
-        let valClass = valori[i] > 0 ? "minutes highlight" : "minutes zero";
+function renderTable() {
+    let html = "";
+    let totaleAttuale = valori.reduce((a, b) => a + b, 0);
+    
+    // Aggiorna display totale
+    const disp = document.getElementById("totaleDisplay");
+    disp.innerText = "Totale: " + totaleAttuale + " min";
+    disp.className = (totaleAttuale === 480) ? "info-box" : "info-box error";
+
+    for (let i = 0; i < nomiAttivita.length; i++) {
+        let cssClass = "row-item";
+        let readOnlyAttr = "";
+        let inputClass = "";
+
+        // Stile bordo
+        if(indiciFissi.includes(i)) { cssClass += " fixed"; readOnlyAttr = "readonly"; inputClass="readonly"; }
+        else if(highPrio.includes(i)) cssClass += " prio-high";
+        else if(medPrio.includes(i)) cssClass += " prio-med";
+        else if(lowPrio.includes(i)) cssClass += " prio-low";
+
+        // Se il valore è 0 e non è modificato, lo mostriamo grigio/vuoto visivamente
+        // ma nell'input mettiamo il valore
         
-        html += `<tr>
-            <td class="${styleClass}">${attivita[i]}</td>
-            <td class="${valClass}">${valori[i]}</td>
+        html += `<tr class="${cssClass}">
+            <td class="col-name">${nomiAttivita[i]}</td>
+            <td>
+                <input type="number" 
+                       value="${valori[i]}" 
+                       class="${inputClass}" 
+                       ${readOnlyAttr}
+                       onchange="ricalcola(this, ${i})"
+                       inputmode="numeric">
+            </td>
         </tr>`;
     }
-    
     document.getElementById("listaAttivita").innerHTML = html;
-    document.getElementById("totaleDisplay").innerText = "Totale Generato: " + totaleReale + " min";
 }
+
+function ricalcola(inputElem, indexModificato) {
+    let nuovoValore = parseInt(inputElem.value);
+    if(isNaN(nuovoValore) || nuovoValore < 0) nuovoValore = 0;
+    
+    let vecchioValore = valori[indexModificato];
+    let differenza = nuovoValore - vecchioValore;
+    
+    if (differenza === 0) return; // Nessun cambio reale
+
+    // Aggiorna il valore modificato
+    valori[indexModificato] = nuovoValore;
+
+    // Ora dobbiamo bilanciare la differenza sugli ALTRI campi
+    // Non tocchiamo: Fissi, e la riga appena modificata
+    
+    if (differenza > 0) {
+        // Ho AGGIUNTO minuti (es. ho messo 30 dove c'era 0).
+        // Devo TOGLIERE 30 minuti da altri posti (dai più ricchi).
+        togliMinuti(differenza, indexModificato);
+    } else {
+        // Ho TOLTO minuti (es. ho messo 0 dove c'era 20).
+        // Devo AGGIUNGERE minuti da qualche parte (ai prioritari).
+        aggiungiMinuti(Math.abs(differenza), indexModificato);
+    }
+
+    renderTable();
+}
+
+function togliMinuti(quantoTogliere, escludiIndex) {
+    // Cerchiamo di togliere dai valori più alti disponibili (escludendo fissi e quello modificato)
+    // Loop finché non abbiamo tolto tutto
+    while (quantoTogliere > 0) {
+        // Trova l'indice (non fisso e non escluso) che ha il valore più alto
+        let maxVal = -1;
+        let maxIdx = -1;
+
+        for(let i=0; i<valori.length; i++) {
+            if(indiciFissi.includes(i) || i === escludiIndex) continue;
+            if(valori[i] > maxVal) {
+                maxVal = valori[i];
+                maxIdx = i;
+            }
+        }
+
+        // Se non trovo nulla da togliere, esco (il totale sballerà, ma non posso andare in negativo)
+        if (maxIdx === -1 || maxVal === 0) break;
+
+        // Tolgo 5 minuti (o meno se ne mancano meno)
+        let step = (quantoTogliere >= 5) ? 5 : quantoTogliere;
+        
+        // Non andare sotto zero
+        if (valori[maxIdx] - step < 0) step = valori[maxIdx];
+
+        valori[maxIdx] -= step;
+        quantoTogliere -= step;
+    }
+}
+
+function aggiungiMinuti(quantoAggiungere, escludiIndex) {
+    // Distribuisce il surplus sulle attività ad alta priorità (o media se serve)
+    // Usa un pool casuale per non accumulare tutto sullo stesso
+    let pool = [];
+    highPrio.forEach(i => { if(i !== escludiIndex) pool.push(i); });
+    medPrio.forEach(i => { if(i !== escludiIndex) pool.push(i); });
+    
+    // Se pool vuoto, usa tutto tranne fissi
+    if(pool.length === 0) {
+        for(let i=0; i<valori.length; i++) {
+            if(!indiciFissi.includes(i) && i !== escludiIndex) pool.push(i);
+        }
+    }
+
+    while (quantoAggiungere > 0) {
+        let riga = pool[Math.floor(Math.random() * pool.length)];
+        valori[riga] += 5;
+        quantoAggiungere -= 5;
+    }
+}
+
+// Avvia alla prima apertura
+generaGiornataIniziale();
+
 </script>
 
 </body>
