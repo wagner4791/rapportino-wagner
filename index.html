@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Rapportino Wagner 3.0</title>
+<title>Rapportino Wagner 3.1</title>
 <style>
     /* --- DESIGN MODERNO & CLEAN --- */
     :root {
@@ -185,7 +185,7 @@
 
 <div class="header">
     <div class="status-bar">
-        <span>Wagner's Tool</span>
+        <span>Wagner's Tool v3.1</span>
         <span id="dateDisplay"></span>
     </div>
     <div id="totalDisplay" class="total-display">0 min</div>
@@ -356,25 +356,27 @@ function generaGiornata() {
 
     let daDistribuire = minutiTotali - minutiSpesi;
 
-    // 2. Base Minima Garantita in base alla priorità
+    // 2. Base Minima Garantita (RIDOTTA per stare nei 480 min!)
     const highItems = appData.filter(i => i.prio === 'high');
     const medItems = appData.filter(i => i.prio === 'med');
     const lowItems = appData.filter(i => i.prio === 'low');
 
-    highItems.forEach(item => { item.val = 40; daDistribuire -= 40; });
-    medItems.forEach(item => { item.val = 20; daDistribuire -= 20; });
-    lowItems.forEach(item => { item.val = 10; daDistribuire -= 10; });
-
-    // Se siamo andati in negativo (troppi fissi/priorità), resetta a 0 per evitare bug
-    if(daDistribuire < 0) daDistribuire = 0; // Soluzione semplice, in realtà bisognerebbe scalare
+    // Base: Alta=25m, Media=10m, Bassa=0m (possono rimanere a zero)
+    highItems.forEach(item => { 
+        if(daDistribuire >= 25) { item.val = 25; daDistribuire -= 25; }
+    });
+    medItems.forEach(item => { 
+        if(daDistribuire >= 10) { item.val = 10; daDistribuire -= 10; }
+    });
+    // Le basse partono da 0 per risparmiare tempo
 
     // 3. Lotteria per il tempo rimanente
     let pool = [];
     // Mettiamo gli indici nell'urna
     appData.forEach((item, index) => {
-        if(item.prio === 'high') { for(let k=0; k<5; k++) pool.push(index); }
-        else if(item.prio === 'med') { for(let k=0; k<2; k++) pool.push(index); }
-        else if(item.prio === 'low') { pool.push(index); }
+        if(item.prio === 'high') { for(let k=0; k<6; k++) pool.push(index); } // Più biglietti
+        else if(item.prio === 'med') { for(let k=0; k<3; k++) pool.push(index); }
+        else if(item.prio === 'low') { pool.push(index); } // 1 biglietto
         // Fixed non entra nella lotteria
     });
 
