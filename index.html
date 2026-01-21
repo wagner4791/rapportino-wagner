@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Rapportino Multi-Profilo</title>
+<title>Rapportino V5 - Editor</title>
 <style>
     /* --- DESIGN SYSTEM --- */
     :root {
@@ -28,10 +28,10 @@
         padding-bottom: 80px; 
     }
 
-    /* HEADER & PROFILI */
+    /* HEADER */
     .header {
         background-color: var(--card);
-        padding: 15px 15px 5px 15px; /* Meno padding sotto */
+        padding: 15px 15px 5px 15px;
         position: sticky;
         top: 0;
         z-index: 100;
@@ -39,7 +39,6 @@
         text-align: center;
     }
 
-    /* SELETTORE PROFILI */
     .profile-switcher {
         display: flex;
         background-color: var(--inactive);
@@ -67,7 +66,6 @@
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
-    /* DISPLAY TOTALE */
     .status-bar {
         font-size: 13px;
         color: var(--gray);
@@ -85,7 +83,6 @@
     }
     .total-display.error { color: var(--danger); }
 
-    /* AZIONI */
     .actions {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -152,11 +149,38 @@
         align-items: center;
     }
 
+    .text-group {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        flex-grow: 1;
+        margin-right: 10px;
+        overflow: hidden;
+    }
+
+    .activity-row {
+        display: flex;
+        align-items: center;
+    }
+
     .activity-name {
         font-size: 15px;
         font-weight: 500;
-        margin-right: 10px;
         line-height: 1.3;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 180px;
+    }
+
+    .btn-edit {
+        background: none;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+        padding: 0 5px;
+        margin-left: 5px;
+        opacity: 0.5;
     }
     
     .prio-label {
@@ -226,7 +250,7 @@
     
     <div class="actions">
         <button class="btn-gen" onclick="generaGiornata()">🎲 Genera</button>
-        <button class="btn-copy" onclick="copiaAppunti()">📋 Copia</button>
+        <button class="btn-copy" onclick="copiaAppunti()">📋 Copia (Nome+Min)</button>
     </div>
 </div>
 
@@ -235,7 +259,7 @@
 
 <button class="btn-add" onclick="aggiungiRiga()">+ Aggiungi Voce</button>
 
-<div id="toast">Copiato negli appunti!</div>
+<div id="toast">Copiato per Excel (Nome + Minuti)</div>
 
 <script>
 // --- CONFIGURAZIONE ---
@@ -282,44 +306,32 @@ const DEFAULT_TEMPLATE = [
 ];
 
 // STATO GLOBALE
-let currentProfile = 'JUNIOR'; // Default
+let currentProfile = 'JUNIOR'; 
 let appData = [];
 
 // AVVIO
 document.getElementById("dateDisplay").innerText = new Date().toLocaleDateString('it-IT');
-loadCurrentProfile(); // Carica Junior all'avvio
+loadCurrentProfile(); 
 
 // --- GESTIONE PROFILI ---
-
 function switchProfile(profileName) {
     if(currentProfile === profileName) return;
-
-    // Salva lo stato attuale prima di cambiare
     saveData();
-
-    // Cambia profilo
     currentProfile = profileName;
-
-    // Aggiorna UI Bottoni
     document.getElementById('btn-junior').className = (profileName === 'JUNIOR') ? 'profile-btn active' : 'profile-btn';
     document.getElementById('btn-wagner').className = (profileName === 'WAGNER') ? 'profile-btn active' : 'profile-btn';
     document.getElementById('profileLabel').innerText = "Profilo: " + profileName;
-
-    // Carica i dati del nuovo profilo
     loadCurrentProfile();
 }
 
 function loadCurrentProfile() {
-    const key = 'wagnerData_' + currentProfile; // Chiave diversa per ogni profilo
+    const key = 'wagnerData_' + currentProfile; 
     const saved = localStorage.getItem(key);
-    
     if (saved) {
         appData = JSON.parse(saved);
     } else {
-        // Se è la prima volta per questo profilo, usa il template base
         appData = JSON.parse(JSON.stringify(DEFAULT_TEMPLATE));
     }
-    
     renderList();
     aggiornaTotale();
 }
@@ -330,7 +342,6 @@ function saveData() {
 }
 
 // --- FUNZIONI UI & RENDER ---
-
 function renderList() {
     const container = document.getElementById("listaContainer");
     container.innerHTML = "";
@@ -341,8 +352,11 @@ function renderList() {
         div.innerHTML = `
             <div class="prio-indicator prio-${item.prio}" onclick="cambiaPriorita(${index})"></div>
             <div class="card-body">
-                <div>
-                    <div class="activity-name">${item.name}</div>
+                <div class="text-group">
+                    <div class="activity-row">
+                        <div class="activity-name">${item.name}</div>
+                        <button class="btn-edit" onclick="modificaRiga(${index})">✏️</button>
+                    </div>
                     <span class="prio-label" style="color:${getColor(item.prio)}">${PRIORITY_NAMES[item.prio]}</span>
                 </div>
                 <input type="number" inputmode="numeric" value="${item.val}" onchange="modificaManuale(this, ${index})">
@@ -371,6 +385,28 @@ function cambiaPriorita(index) {
     renderList();
 }
 
+// --- MODIFICA E ELIMINA ---
+function modificaRiga(index) {
+    const nuovoNome = prompt("Modifica il nome (lascia vuoto per ELIMINARE la riga):", appData[index].name);
+    
+    if (nuovoNome !== null) {
+        if (nuovoNome.trim() === "") {
+            // Elimina
+            if(confirm("Sei sicuro di voler eliminare questa voce?")) {
+                appData.splice(index, 1);
+                saveData();
+                renderList();
+                aggiornaTotale();
+            }
+        } else {
+            // Rinomina
+            appData[index].name = nuovoNome;
+            saveData();
+            renderList();
+        }
+    }
+}
+
 function aggiungiRiga() {
     const nome = prompt("Nuova attività per " + currentProfile + ":");
     if (nome) {
@@ -388,13 +424,11 @@ function aggiornaTotale() {
     disp.className = (totale === 480) ? "total-display" : "total-display error";
 }
 
-// --- GENERATORE INTELLIGENTE ---
-
+// --- GENERATORE ---
 function generaGiornata() {
     let minutiTotali = 480;
     let minutiSpesi = 0;
 
-    // Resetta non fissi
     appData.forEach(item => {
         if(item.prio === 'fixed') {
             minutiSpesi += item.val;
@@ -405,14 +439,12 @@ function generaGiornata() {
 
     let daDistribuire = minutiTotali - minutiSpesi;
 
-    // Base Minima (Ridotta per sicurezza)
     const highItems = appData.filter(i => i.prio === 'high');
     const medItems = appData.filter(i => i.prio === 'med');
 
     highItems.forEach(item => { if(daDistribuire >= 25) { item.val = 25; daDistribuire -= 25; } });
     medItems.forEach(item => { if(daDistribuire >= 10) { item.val = 10; daDistribuire -= 10; } });
 
-    // Lotteria
     let pool = [];
     appData.forEach((item, index) => {
         if(item.prio === 'high') { for(let k=0; k<6; k++) pool.push(index); }
@@ -436,12 +468,10 @@ function generaGiornata() {
 function modificaManuale(input, index) {
     let nuovoVal = parseInt(input.value) || 0;
     if (nuovoVal < 0) nuovoVal = 0;
-    
     let diff = nuovoVal - appData[index].val;
     if (diff === 0) return;
 
     appData[index].val = nuovoVal;
-
     if (diff > 0) togliTempo(diff, index);
     else aggiungiTempo(Math.abs(diff), index);
 
@@ -479,8 +509,11 @@ function aggiungiTempo(amount, excludeIdx) {
     }
 }
 
+// --- COPIA FORMATO EXCEL ---
 function copiaAppunti() {
-    let testo = appData.map(item => item.val).join('\n');
+    // Crea stringa: Nome [TAB] Minuti [A CAPO]
+    let testo = appData.map(item => item.name + "\t" + item.val).join('\n');
+    
     navigator.clipboard.writeText(testo).then(showToast, (err) => alert('Errore: ' + err));
 }
 
