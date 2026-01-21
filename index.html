@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Rapportino Wagner 3.1</title>
+<title>Rapportino Multi-Profilo</title>
 <style>
-    /* --- DESIGN MODERNO & CLEAN --- */
+    /* --- DESIGN SYSTEM --- */
     :root {
         --primary: #007aff;
         --success: #34c759;
@@ -16,6 +16,7 @@
         --card: #ffffff;
         --text: #1c1c1e;
         --gray: #8e8e93;
+        --inactive: #e5e5ea;
     }
 
     body { 
@@ -24,13 +25,13 @@
         color: var(--text); 
         margin: 0; 
         padding: 0; 
-        padding-bottom: 80px; /* Spazio per scroll */
+        padding-bottom: 80px; 
     }
 
-    /* Header Fisso */
+    /* HEADER & PROFILI */
     .header {
         background-color: var(--card);
-        padding: 15px;
+        padding: 15px 15px 5px 15px; /* Meno padding sotto */
         position: sticky;
         top: 0;
         z-index: 100;
@@ -38,8 +39,37 @@
         text-align: center;
     }
 
-    .status-bar {
+    /* SELETTORE PROFILI */
+    .profile-switcher {
+        display: flex;
+        background-color: var(--inactive);
+        border-radius: 10px;
+        padding: 3px;
+        margin-bottom: 15px;
+    }
+
+    .profile-btn {
+        flex: 1;
+        border: none;
+        padding: 10px;
+        border-radius: 8px;
         font-size: 14px;
+        font-weight: 700;
+        background: transparent;
+        color: var(--gray);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .profile-btn.active {
+        background-color: white;
+        color: var(--text);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* DISPLAY TOTALE */
+    .status-bar {
+        font-size: 13px;
         color: var(--gray);
         margin-bottom: 5px;
         display: flex;
@@ -48,18 +78,19 @@
     }
 
     .total-display {
-        font-size: 24px;
+        font-size: 28px;
         font-weight: 800;
         color: var(--primary);
+        margin: 10px 0;
     }
     .total-display.error { color: var(--danger); }
 
-    /* Griglia Pulsanti */
+    /* AZIONI */
     .actions {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 10px;
-        margin-top: 10px;
+        padding-bottom: 10px;
     }
 
     button {
@@ -75,15 +106,17 @@
 
     .btn-gen { background-color: var(--primary); color: white; }
     .btn-copy { background-color: var(--success); color: white; }
+    
     .btn-add { 
         background-color: var(--card); 
         color: var(--primary); 
         border: 2px solid var(--primary);
-        width: 100%;
-        margin-top: 10px;
+        width: 90%;
+        margin: 20px auto;
+        display: block;
     }
 
-    /* Lista Attività */
+    /* LISTA */
     .list-container {
         padding: 15px;
         max-width: 600px;
@@ -101,10 +134,9 @@
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
-    /* Indicatore Priorità (Cliccabile) */
     .prio-indicator {
         width: 15px;
-        align-self: stretch; /* Altezza piena */
+        align-self: stretch; 
         cursor: pointer;
     }
     .prio-high { background-color: var(--danger); }
@@ -135,7 +167,6 @@
         text-transform: uppercase;
     }
 
-    /* Input Numerico */
     input[type="number"] {
         width: 55px;
         padding: 10px;
@@ -153,11 +184,9 @@
         border-color: var(--primary);
         background: white;
     }
-    /* Nasconde frecce input */
     input::-webkit-outer-spin-button,
     input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-    /* Toast Notification (Messaggio copiato) */
     #toast {
         visibility: hidden;
         min-width: 250px;
@@ -174,8 +203,7 @@
         font-size: 16px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
-    #toast.show { visibility: visible; -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
-
+    #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
     @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
     @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
 
@@ -184,38 +212,43 @@
 <body>
 
 <div class="header">
+    <div class="profile-switcher">
+        <button id="btn-junior" class="profile-btn active" onclick="switchProfile('JUNIOR')">JUNIOR</button>
+        <button id="btn-wagner" class="profile-btn" onclick="switchProfile('WAGNER')">WAGNER</button>
+    </div>
+
     <div class="status-bar">
-        <span>Wagner's Tool v3.1</span>
+        <span id="profileLabel">Profilo: JUNIOR</span>
         <span id="dateDisplay"></span>
     </div>
+
     <div id="totalDisplay" class="total-display">0 min</div>
     
     <div class="actions">
         <button class="btn-gen" onclick="generaGiornata()">🎲 Genera</button>
         <button class="btn-copy" onclick="copiaAppunti()">📋 Copia</button>
     </div>
-    <button class="btn-add" onclick="aggiungiRiga()">+ Aggiungi Voce</button>
 </div>
 
 <div class="list-container" id="listaContainer">
     </div>
 
+<button class="btn-add" onclick="aggiungiRiga()">+ Aggiungi Voce</button>
+
 <div id="toast">Copiato negli appunti!</div>
 
 <script>
 // --- CONFIGURAZIONE ---
-// Definiamo i livelli di priorità e le classi CSS
-const PRIORITY_LEVELS = ['low', 'med', 'high', 'fixed'];
 const PRIORITY_NAMES = { 'low': 'Bassa', 'med': 'Media', 'high': 'Alta', 'fixed': 'Fisso' };
 
-// Stato predefinito (se non c'è nulla in memoria)
-const DEFAULT_DATA = [
+// Dati Base (usati solo se il profilo è vuoto/nuovo)
+const DEFAULT_TEMPLATE = [
     { name: "MALATTIA", val: 0, prio: "fixed" },
     { name: "PERMESSO", val: 0, prio: "fixed" },
     { name: "FESTIVITÀ", val: 0, prio: "fixed" },
     { name: "FERIE", val: 0, prio: "fixed" },
     { name: "TRASFERTA", val: 0, prio: "fixed" },
-    { name: "PAUSA", val: 30, prio: "fixed" }, // Fisso a 30
+    { name: "PAUSA", val: 30, prio: "fixed" }, 
     { name: "INVIO MATERIALE INCOMING", val: 0, prio: "low" },
     { name: "VERIFICA QTY MERCE ARRIVATA", val: 0, prio: "med" },
     { name: "UBICAZIONE MERCE", val: 0, prio: "med" },
@@ -224,7 +257,7 @@ const DEFAULT_DATA = [
     { name: "STAMPA SCHEDA PMI", val: 0, prio: "med" },
     { name: "PRELIEVO COMMESSA", val: 0, prio: "med" },
     { name: "PRELIEVO PMI", val: 0, prio: "med" },
-    { name: "AGGIORNAMENTO GIORNALIERO", val: 10, prio: "fixed" }, // Fisso 10
+    { name: "AGGIORNAMENTO GIORNALIERO", val: 10, prio: "fixed" },
     { name: "CONSEGNA COMMESSE IN PRODUZIONE", val: 0, prio: "low" },
     { name: "RISOLUZIONE PROBLEMA", val: 0, prio: "high" },
     { name: "SUPPORTO UFFICIO TECNICO", val: 0, prio: "low" },
@@ -235,7 +268,7 @@ const DEFAULT_DATA = [
     { name: "CHIAMATE TELEFONICHE", val: 0, prio: "low" },
     { name: "USCITA CONSEGNA / RITIRO", val: 0, prio: "low" },
     { name: "EMAIL LETTURA / RISPOSTA", val: 0, prio: "med" },
-    { name: "CHECK MANUTENZIONE MULETTO", val: 5, prio: "fixed" }, // Fisso 5
+    { name: "CHECK MANUTENZIONE MULETTO", val: 5, prio: "fixed" }, 
     { name: "BIDONE GRASSO MONTAGGIO", val: 0, prio: "low" },
     { name: "INTEGRAZIONE MATERIALE COMMESSA", val: 0, prio: "high" },
     { name: "PRELIEVO NON PIANIFICATO", val: 0, prio: "low" },
@@ -244,31 +277,59 @@ const DEFAULT_DATA = [
     { name: "VERIFICA MATERIALI MANCANTI", val: 0, prio: "med" },
     { name: "ASSEGNAZIONE MATERIALE", val: 0, prio: "med" },
     { name: "CAMBIO MATERIALE MONTAGGIO", val: 0, prio: "low" },
-    { name: "COMPILAZIONE ORE", val: 5, prio: "fixed" }, // Fisso 5
+    { name: "COMPILAZIONE ORE", val: 5, prio: "fixed" }, 
     { name: "INVENTARIO SPOT", val: 0, prio: "low" }
 ];
 
-// Carichiamo i dati (dalla memoria o default)
-let appData = loadData();
+// STATO GLOBALE
+let currentProfile = 'JUNIOR'; // Default
+let appData = [];
 
-// Mostra data oggi
+// AVVIO
 document.getElementById("dateDisplay").innerText = new Date().toLocaleDateString('it-IT');
+loadCurrentProfile(); // Carica Junior all'avvio
 
-// Avvio iniziale
-renderList();
-aggiornaTotale();
+// --- GESTIONE PROFILI ---
 
-// --- FUNZIONI CORE ---
+function switchProfile(profileName) {
+    if(currentProfile === profileName) return;
 
-function loadData() {
-    const saved = localStorage.getItem('wagnerData_v3');
-    if (saved) return JSON.parse(saved);
-    return JSON.parse(JSON.stringify(DEFAULT_DATA)); // Clone
+    // Salva lo stato attuale prima di cambiare
+    saveData();
+
+    // Cambia profilo
+    currentProfile = profileName;
+
+    // Aggiorna UI Bottoni
+    document.getElementById('btn-junior').className = (profileName === 'JUNIOR') ? 'profile-btn active' : 'profile-btn';
+    document.getElementById('btn-wagner').className = (profileName === 'WAGNER') ? 'profile-btn active' : 'profile-btn';
+    document.getElementById('profileLabel').innerText = "Profilo: " + profileName;
+
+    // Carica i dati del nuovo profilo
+    loadCurrentProfile();
+}
+
+function loadCurrentProfile() {
+    const key = 'wagnerData_' + currentProfile; // Chiave diversa per ogni profilo
+    const saved = localStorage.getItem(key);
+    
+    if (saved) {
+        appData = JSON.parse(saved);
+    } else {
+        // Se è la prima volta per questo profilo, usa il template base
+        appData = JSON.parse(JSON.stringify(DEFAULT_TEMPLATE));
+    }
+    
+    renderList();
+    aggiornaTotale();
 }
 
 function saveData() {
-    localStorage.setItem('wagnerData_v3', JSON.stringify(appData));
+    const key = 'wagnerData_' + currentProfile;
+    localStorage.setItem(key, JSON.stringify(appData));
 }
+
+// --- FUNZIONI UI & RENDER ---
 
 function renderList() {
     const container = document.getElementById("listaContainer");
@@ -277,8 +338,6 @@ function renderList() {
     appData.forEach((item, index) => {
         const div = document.createElement("div");
         div.className = "card";
-        
-        // HTML della card
         div.innerHTML = `
             <div class="prio-indicator prio-${item.prio}" onclick="cambiaPriorita(${index})"></div>
             <div class="card-body">
@@ -301,7 +360,6 @@ function getColor(prio) {
 }
 
 function cambiaPriorita(index) {
-    // Cicla: Low -> Med -> High -> Fixed -> Low
     const current = appData[index].prio;
     let next = 'low';
     if(current === 'low') next = 'med';
@@ -310,17 +368,16 @@ function cambiaPriorita(index) {
     
     appData[index].prio = next;
     saveData();
-    renderList(); // Ridisegna per mostrare il colore nuovo
+    renderList();
 }
 
 function aggiungiRiga() {
-    const nome = prompt("Nome nuova attività:");
+    const nome = prompt("Nuova attività per " + currentProfile + ":");
     if (nome) {
         appData.push({ name: nome, val: 0, prio: 'med' });
         saveData();
         renderList();
-        // Scrolla in fondo
-        window.scrollTo(0, document.body.scrollHeight);
+        setTimeout(() => window.scrollTo(0, document.body.scrollHeight), 100);
     }
 }
 
@@ -328,62 +385,45 @@ function aggiornaTotale() {
     const totale = appData.reduce((acc, item) => acc + item.val, 0);
     const disp = document.getElementById("totalDisplay");
     disp.innerText = totale + " min";
-    
-    if (totale === 480) {
-        disp.style.color = "var(--primary)";
-    } else {
-        disp.style.color = "var(--danger)";
-    }
+    disp.className = (totale === 480) ? "total-display" : "total-display error";
 }
 
-// --- LOGICA GENERATORE INTELLIGENTE ---
+// --- GENERATORE INTELLIGENTE ---
 
 function generaGiornata() {
-    // 1. Reset valori (mantiene i fissi come sono nel loro stato attuale)
-    // Se un elemento è "Fixed", non lo tocchiamo. Gli altri a 0.
-    
     let minutiTotali = 480;
     let minutiSpesi = 0;
 
-    // Calcola quanto consumano i fissi
+    // Resetta non fissi
     appData.forEach(item => {
         if(item.prio === 'fixed') {
             minutiSpesi += item.val;
         } else {
-            item.val = 0; // Resetta gli altri
+            item.val = 0; 
         }
     });
 
     let daDistribuire = minutiTotali - minutiSpesi;
 
-    // 2. Base Minima Garantita (RIDOTTA per stare nei 480 min!)
+    // Base Minima (Ridotta per sicurezza)
     const highItems = appData.filter(i => i.prio === 'high');
     const medItems = appData.filter(i => i.prio === 'med');
-    const lowItems = appData.filter(i => i.prio === 'low');
 
-    // Base: Alta=25m, Media=10m, Bassa=0m (possono rimanere a zero)
-    highItems.forEach(item => { 
-        if(daDistribuire >= 25) { item.val = 25; daDistribuire -= 25; }
-    });
-    medItems.forEach(item => { 
-        if(daDistribuire >= 10) { item.val = 10; daDistribuire -= 10; }
-    });
-    // Le basse partono da 0 per risparmiare tempo
+    highItems.forEach(item => { if(daDistribuire >= 25) { item.val = 25; daDistribuire -= 25; } });
+    medItems.forEach(item => { if(daDistribuire >= 10) { item.val = 10; daDistribuire -= 10; } });
 
-    // 3. Lotteria per il tempo rimanente
+    // Lotteria
     let pool = [];
-    // Mettiamo gli indici nell'urna
     appData.forEach((item, index) => {
-        if(item.prio === 'high') { for(let k=0; k<6; k++) pool.push(index); } // Più biglietti
+        if(item.prio === 'high') { for(let k=0; k<6; k++) pool.push(index); }
         else if(item.prio === 'med') { for(let k=0; k<3; k++) pool.push(index); }
-        else if(item.prio === 'low') { pool.push(index); } // 1 biglietto
-        // Fixed non entra nella lotteria
+        else if(item.prio === 'low') { pool.push(index); }
     });
 
     if (pool.length > 0) {
         while (daDistribuire > 0) {
-            let randomIndex = pool[Math.floor(Math.random() * pool.length)];
-            appData[randomIndex].val += 5;
+            let idx = pool[Math.floor(Math.random() * pool.length)];
+            appData[idx].val += 5;
             daDistribuire -= 5;
         }
     }
@@ -397,61 +437,41 @@ function modificaManuale(input, index) {
     let nuovoVal = parseInt(input.value) || 0;
     if (nuovoVal < 0) nuovoVal = 0;
     
-    let vecchioVal = appData[index].val;
-    let diff = nuovoVal - vecchioVal;
-
+    let diff = nuovoVal - appData[index].val;
     if (diff === 0) return;
 
     appData[index].val = nuovoVal;
 
-    // Bilanciamento automatico
-    if (diff > 0) {
-        // Ho aggiunto tempo, devo toglierlo ad altri (preferibilmente non fissi)
-        togliTempo(diff, index);
-    } else {
-        // Ho tolto tempo, devo aggiungerlo ad altri
-        aggiungiTempo(Math.abs(diff), index);
-    }
+    if (diff > 0) togliTempo(diff, index);
+    else aggiungiTempo(Math.abs(diff), index);
 
     saveData();
-    renderList(); // Rirendering per aggiornare gli altri campi
+    renderList();
     aggiornaTotale();
 }
 
 function togliTempo(amount, excludeIdx) {
     while(amount > 0) {
-        // Trova chi ha più minuti (escluso fissi e se stesso)
-        let maxVal = -1;
-        let maxIdx = -1;
-        
+        let maxVal = -1; let maxIdx = -1;
         appData.forEach((item, idx) => {
             if(idx !== excludeIdx && item.prio !== 'fixed') {
-                if(item.val > maxVal) {
-                    maxVal = item.val;
-                    maxIdx = idx;
-                }
+                if(item.val > maxVal) { maxVal = item.val; maxIdx = idx; }
             }
         });
-
-        if(maxIdx === -1 || maxVal === 0) break; // Non c'è più nulla da togliere
-
+        if(maxIdx === -1 || maxVal === 0) break;
         let step = (amount >= 5) ? 5 : amount;
         if (appData[maxIdx].val - step < 0) step = appData[maxIdx].val;
-        
         appData[maxIdx].val -= step;
         amount -= step;
     }
 }
 
 function aggiungiTempo(amount, excludeIdx) {
-    // Aggiungi a caso ai non fissi
     let pool = [];
     appData.forEach((item, idx) => {
         if(idx !== excludeIdx && item.prio !== 'fixed') pool.push(idx);
     });
-
     if(pool.length === 0) return;
-
     while(amount > 0) {
         let rIdx = pool[Math.floor(Math.random() * pool.length)];
         appData[rIdx].val += 5;
@@ -459,22 +479,15 @@ function aggiungiTempo(amount, excludeIdx) {
     }
 }
 
-// --- FUNZIONE COPIA ---
 function copiaAppunti() {
-    // Crea una stringa con solo i numeri separati da a capo
     let testo = appData.map(item => item.val).join('\n');
-    
-    navigator.clipboard.writeText(testo).then(function() {
-        showToast();
-    }, function(err) {
-        alert('Errore copia: ' + err);
-    });
+    navigator.clipboard.writeText(testo).then(showToast, (err) => alert('Errore: ' + err));
 }
 
 function showToast() {
     var x = document.getElementById("toast");
     x.className = "show";
-    setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+    setTimeout(() => { x.className = x.className.replace("show", ""); }, 3000);
 }
 </script>
 
