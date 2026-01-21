@@ -2,267 +2,478 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rapportino Wagner 2.0</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Rapportino Wagner 3.0</title>
 <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 10px; background-color: #f0f2f5; color: #333; }
-    h2 { text-align: center; margin-bottom: 10px; font-size: 1.2rem; }
-    
-    .container { max-width: 600px; margin: 0 auto; background: white; padding: 10px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    
-    .btn-container { position: sticky; top: 0; background: white; padding: 10px 0; z-index: 10; border-bottom: 1px solid #eee; }
-    
-    button { 
-        width: 100%; 
-        padding: 12px; 
-        background-color: #007bff; 
-        color: white; 
-        border: none; 
-        border-radius: 8px; 
-        font-size: 16px; 
-        font-weight: bold;
-        cursor: pointer; 
-        box-shadow: 0 2px 5px rgba(0,123,255,0.3);
+    /* --- DESIGN MODERNO & CLEAN --- */
+    :root {
+        --primary: #007aff;
+        --success: #34c759;
+        --danger: #ff3b30;
+        --warning: #ffcc00;
+        --info: #5ac8fa;
+        --bg: #f2f2f7;
+        --card: #ffffff;
+        --text: #1c1c1e;
+        --gray: #8e8e93;
     }
-    button:active { transform: scale(0.98); }
-    
-    .info-box { 
-        text-align: center; 
-        font-weight: bold; 
-        margin: 5px 0; 
-        font-size: 16px;
-        color: #28a745;
-    }
-    .error { color: #dc3545; }
 
-    table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-    td { padding: 8px 5px; border-bottom: 1px solid #f1f1f1; vertical-align: middle; }
-    
-    /* Stile della colonna nomi */
-    .col-name { font-size: 14px; line-height: 1.2; }
-    
-    /* Input numerico */
-    input[type="number"] {
-        width: 50px;
-        padding: 8px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
+    body { 
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+        background-color: var(--bg); 
+        color: var(--text); 
+        margin: 0; 
+        padding: 0; 
+        padding-bottom: 80px; /* Spazio per scroll */
+    }
+
+    /* Header Fisso */
+    .header {
+        background-color: var(--card);
+        padding: 15px;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         text-align: center;
+    }
+
+    .status-bar {
+        font-size: 14px;
+        color: var(--gray);
+        margin-bottom: 5px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .total-display {
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--primary);
+    }
+    .total-display.error { color: var(--danger); }
+
+    /* Griglia Pulsanti */
+    .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    button {
+        border: none;
+        padding: 12px;
+        border-radius: 10px;
         font-size: 16px;
-        font-weight: bold;
-        background-color: #fff;
-        color: #333;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+    button:active { transform: scale(0.96); }
+
+    .btn-gen { background-color: var(--primary); color: white; }
+    .btn-copy { background-color: var(--success); color: white; }
+    .btn-add { 
+        background-color: var(--card); 
+        color: var(--primary); 
+        border: 2px solid var(--primary);
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    /* Lista Attività */
+    .list-container {
+        padding: 15px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .card {
+        background: var(--card);
+        border-radius: 12px;
+        padding: 0;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    /* Indicatore Priorità (Cliccabile) */
+    .prio-indicator {
+        width: 15px;
+        align-self: stretch; /* Altezza piena */
+        cursor: pointer;
+    }
+    .prio-high { background-color: var(--danger); }
+    .prio-med { background-color: var(--warning); }
+    .prio-low { background-color: var(--info); }
+    .prio-fixed { background-color: var(--gray); }
+
+    .card-body {
+        flex-grow: 1;
+        padding: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .activity-name {
+        font-size: 15px;
+        font-weight: 500;
+        margin-right: 10px;
+        line-height: 1.3;
     }
     
-    input[type="number"]:focus {
-        border-color: #007bff;
-        outline: none;
-        background-color: #eef7ff;
+    .prio-label {
+        font-size: 10px;
+        color: var(--gray);
+        display: block;
+        margin-top: 2px;
+        text-transform: uppercase;
     }
 
-    /* Stili per le priorità (barretta colorata a sinistra) */
-    .row-item { border-left: 4px solid transparent; }
-    .prio-high { border-left-color: #dc3545; } /* Rosso */
-    .prio-med { border-left-color: #ffc107; }  /* Giallo */
-    .prio-low { border-left-color: #17a2b8; }  /* Azzurro */
-    .fixed { border-left-color: #343a40; background-color: #f8f9fa; }     /* Grigio */
+    /* Input Numerico */
+    input[type="number"] {
+        width: 55px;
+        padding: 10px;
+        border: 1px solid #e5e5ea;
+        border-radius: 8px;
+        text-align: center;
+        font-size: 18px;
+        font-weight: bold;
+        background: #f2f2f7;
+        color: var(--text);
+        -moz-appearance: textfield;
+    }
+    input[type="number"]:focus {
+        outline: none;
+        border-color: var(--primary);
+        background: white;
+    }
+    /* Nasconde frecce input */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-    /* I fissi non si possono modificare facilmente */
-    input.readonly { background-color: #e9ecef; color: #6c757d; border: none; }
+    /* Toast Notification (Messaggio copiato) */
+    #toast {
+        visibility: hidden;
+        min-width: 250px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 50px;
+        padding: 16px;
+        position: fixed;
+        z-index: 1000;
+        left: 50%;
+        bottom: 30px;
+        transform: translateX(-50%);
+        font-size: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    #toast.show { visibility: visible; -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
 
-    .help-text { font-size: 12px; color: #666; text-align: center; margin-bottom: 10px; font-style: italic;}
+    @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+    @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
 </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Rapportino Wagner</h2>
-    <div class="help-text">Modifica un numero e il totale si aggiusta da solo.</div>
-    
-    <div class="btn-container">
-        <div class="info-box" id="totaleDisplay">Totale: 0 min</div>
-        <button onclick="generaGiornataIniziale()">🔄 GENERA GIORNATA CASUALE</button>
+<div class="header">
+    <div class="status-bar">
+        <span>Wagner's Tool</span>
+        <span id="dateDisplay"></span>
     </div>
+    <div id="totalDisplay" class="total-display">0 min</div>
     
-    <table id="listaAttivita">
-        </table>
+    <div class="actions">
+        <button class="btn-gen" onclick="generaGiornata()">🎲 Genera</button>
+        <button class="btn-copy" onclick="copiaAppunti()">📋 Copia</button>
+    </div>
+    <button class="btn-add" onclick="aggiungiRiga()">+ Aggiungi Voce</button>
 </div>
 
+<div class="list-container" id="listaContainer">
+    </div>
+
+<div id="toast">Copiato negli appunti!</div>
+
 <script>
-// --- DATI ---
-const nomiAttivita = [
-    "MALATTIA", "PERMESSO", "FESTIVITÀ", "FERIE", "TRASFERTA", "PAUSA", // 0-5
-    "INVIO MATERIALE INCOMING", "VERIFICA QTY MERCE ARRIVATA", "UBICAZIONE MERCE", "AGGIORNAMENTO WEEK", // 6-9
-    "STAMPA SCHEDA MONTAGGIO", "STAMPA SCHEDA PMI", "PRELIEVO COMMESSA", "PRELIEVO PMI", "AGGIORNAMENTO GIORNALIERO", // 10-14
-    "CONSEGNA COMMESSE IN PRODUZIONE", "RISOLUZIONE PROBLEMA", "SUPPORTO UFFICIO TECNICO", "RICHIESTE COLLAUDO", "MATERIALE SHELL TEST", // 15-19
-    "PRELIEVO VENDITA", "ORGANIZZAZIONE MAGAZZINO (pulizia, ecc..)", "CHIAMATE TELEFONICHE", "USCITA CONSEGNA / RITIRO", "EMAIL LETTURA / RISPOSTA", // 20-24
-    "CHECK MANUTENZIONE MULETTO", "BIDONE GRASSO MONTAGGIO", "INTEGRAZIONE MATERIALE COMMESSA", "PRELIEVO NON PIANIFICATO", "INTERVENTO INFORMATICO", // 25-29
-    "CARICO / SCARICO CAMION", "VERIFICA MATERIALI MANCANTI", "ASSEGNAZIONE MATERIALE", "CAMBIO MATERIALE MONTAGGIO", "COMPILAZIONE ORE", "INVENTARIO SPOT" // 30-35
+// --- CONFIGURAZIONE ---
+// Definiamo i livelli di priorità e le classi CSS
+const PRIORITY_LEVELS = ['low', 'med', 'high', 'fixed'];
+const PRIORITY_NAMES = { 'low': 'Bassa', 'med': 'Media', 'high': 'Alta', 'fixed': 'Fisso' };
+
+// Stato predefinito (se non c'è nulla in memoria)
+const DEFAULT_DATA = [
+    { name: "MALATTIA", val: 0, prio: "fixed" },
+    { name: "PERMESSO", val: 0, prio: "fixed" },
+    { name: "FESTIVITÀ", val: 0, prio: "fixed" },
+    { name: "FERIE", val: 0, prio: "fixed" },
+    { name: "TRASFERTA", val: 0, prio: "fixed" },
+    { name: "PAUSA", val: 30, prio: "fixed" }, // Fisso a 30
+    { name: "INVIO MATERIALE INCOMING", val: 0, prio: "low" },
+    { name: "VERIFICA QTY MERCE ARRIVATA", val: 0, prio: "med" },
+    { name: "UBICAZIONE MERCE", val: 0, prio: "med" },
+    { name: "AGGIORNAMENTO WEEK", val: 0, prio: "med" },
+    { name: "STAMPA SCHEDA MONTAGGIO", val: 0, prio: "high" },
+    { name: "STAMPA SCHEDA PMI", val: 0, prio: "med" },
+    { name: "PRELIEVO COMMESSA", val: 0, prio: "med" },
+    { name: "PRELIEVO PMI", val: 0, prio: "med" },
+    { name: "AGGIORNAMENTO GIORNALIERO", val: 10, prio: "fixed" }, // Fisso 10
+    { name: "CONSEGNA COMMESSE IN PRODUZIONE", val: 0, prio: "low" },
+    { name: "RISOLUZIONE PROBLEMA", val: 0, prio: "high" },
+    { name: "SUPPORTO UFFICIO TECNICO", val: 0, prio: "low" },
+    { name: "RICHIESTE COLLAUDO", val: 0, prio: "low" },
+    { name: "MATERIALE SHELL TEST", val: 0, prio: "low" },
+    { name: "PRELIEVO VENDITA", val: 0, prio: "low" },
+    { name: "ORGANIZZAZIONE MAGAZZINO", val: 0, prio: "low" },
+    { name: "CHIAMATE TELEFONICHE", val: 0, prio: "low" },
+    { name: "USCITA CONSEGNA / RITIRO", val: 0, prio: "low" },
+    { name: "EMAIL LETTURA / RISPOSTA", val: 0, prio: "med" },
+    { name: "CHECK MANUTENZIONE MULETTO", val: 5, prio: "fixed" }, // Fisso 5
+    { name: "BIDONE GRASSO MONTAGGIO", val: 0, prio: "low" },
+    { name: "INTEGRAZIONE MATERIALE COMMESSA", val: 0, prio: "high" },
+    { name: "PRELIEVO NON PIANIFICATO", val: 0, prio: "low" },
+    { name: "INTERVENTO INFORMATICO", val: 0, prio: "low" },
+    { name: "CARICO / SCARICO CAMION", val: 0, prio: "med" },
+    { name: "VERIFICA MATERIALI MANCANTI", val: 0, prio: "med" },
+    { name: "ASSEGNAZIONE MATERIALE", val: 0, prio: "med" },
+    { name: "CAMBIO MATERIALE MONTAGGIO", val: 0, prio: "low" },
+    { name: "COMPILAZIONE ORE", val: 5, prio: "fixed" }, // Fisso 5
+    { name: "INVENTARIO SPOT", val: 0, prio: "low" }
 ];
 
-// Indici speciali
-const indiciFissi = [5, 14, 25, 34]; // Pausa, Aggiornamento, Check Muletto, Ore
-const highPrio = [10, 16, 27]; 
-const medPrio = [8, 9, 11, 24, 31, 32];
-const lowPrio = [7, 21, 22];
+// Carichiamo i dati (dalla memoria o default)
+let appData = loadData();
 
-// Stato attuale dei minuti
-let valori = new Array(36).fill(0);
+// Mostra data oggi
+document.getElementById("dateDisplay").innerText = new Date().toLocaleDateString('it-IT');
 
-// --- FUNZIONI ---
+// Avvio iniziale
+renderList();
+aggiornaTotale();
 
-function generaGiornataIniziale() {
-    valori.fill(0);
-    let minutiTotali = 480;
-    
-    // 1. Assegna Fissi
-    valori[5] = 30;  
-    valori[14] = 10; 
-    valori[25] = 5;  
-    valori[34] = 5;  
-    
-    let daDistribuire = minutiTotali - (30+10+5+5);
+// --- FUNZIONI CORE ---
 
-    // 2. Base Priorità
-    highPrio.forEach(i => { valori[i] = 40; daDistribuire -= 40; });
-    medPrio.forEach(i => { valori[i] = 20; daDistribuire -= 20; });
-    lowPrio.forEach(i => { valori[i] = 10; daDistribuire -= 10; });
-
-    // 3. Lotteria per il resto
-    let pool = [];
-    highPrio.forEach(i => { for(let k=0; k<5; k++) pool.push(i); });
-    medPrio.forEach(i => { for(let k=0; k<2; k++) pool.push(i); });
-    lowPrio.forEach(i => { pool.push(i); });
-
-    while (daDistribuire > 0) {
-        let riga = pool[Math.floor(Math.random() * pool.length)];
-        valori[riga] += 5;
-        daDistribuire -= 5;
-    }
-
-    renderTable();
+function loadData() {
+    const saved = localStorage.getItem('wagnerData_v3');
+    if (saved) return JSON.parse(saved);
+    return JSON.parse(JSON.stringify(DEFAULT_DATA)); // Clone
 }
 
-function renderTable() {
-    let html = "";
-    let totaleAttuale = valori.reduce((a, b) => a + b, 0);
-    
-    // Aggiorna display totale
-    const disp = document.getElementById("totaleDisplay");
-    disp.innerText = "Totale: " + totaleAttuale + " min";
-    disp.className = (totaleAttuale === 480) ? "info-box" : "info-box error";
+function saveData() {
+    localStorage.setItem('wagnerData_v3', JSON.stringify(appData));
+}
 
-    for (let i = 0; i < nomiAttivita.length; i++) {
-        let cssClass = "row-item";
-        let readOnlyAttr = "";
-        let inputClass = "";
+function renderList() {
+    const container = document.getElementById("listaContainer");
+    container.innerHTML = "";
 
-        // Stile bordo
-        if(indiciFissi.includes(i)) { cssClass += " fixed"; readOnlyAttr = "readonly"; inputClass="readonly"; }
-        else if(highPrio.includes(i)) cssClass += " prio-high";
-        else if(medPrio.includes(i)) cssClass += " prio-med";
-        else if(lowPrio.includes(i)) cssClass += " prio-low";
-
-        // Se il valore è 0 e non è modificato, lo mostriamo grigio/vuoto visivamente
-        // ma nell'input mettiamo il valore
+    appData.forEach((item, index) => {
+        const div = document.createElement("div");
+        div.className = "card";
         
-        html += `<tr class="${cssClass}">
-            <td class="col-name">${nomiAttivita[i]}</td>
-            <td>
-                <input type="number" 
-                       value="${valori[i]}" 
-                       class="${inputClass}" 
-                       ${readOnlyAttr}
-                       onchange="ricalcola(this, ${i})"
-                       inputmode="numeric">
-            </td>
-        </tr>`;
-    }
-    document.getElementById("listaAttivita").innerHTML = html;
+        // HTML della card
+        div.innerHTML = `
+            <div class="prio-indicator prio-${item.prio}" onclick="cambiaPriorita(${index})"></div>
+            <div class="card-body">
+                <div>
+                    <div class="activity-name">${item.name}</div>
+                    <span class="prio-label" style="color:${getColor(item.prio)}">${PRIORITY_NAMES[item.prio]}</span>
+                </div>
+                <input type="number" inputmode="numeric" value="${item.val}" onchange="modificaManuale(this, ${index})">
+            </div>
+        `;
+        container.appendChild(div);
+    });
 }
 
-function ricalcola(inputElem, indexModificato) {
-    let nuovoValore = parseInt(inputElem.value);
-    if(isNaN(nuovoValore) || nuovoValore < 0) nuovoValore = 0;
-    
-    let vecchioValore = valori[indexModificato];
-    let differenza = nuovoValore - vecchioValore;
-    
-    if (differenza === 0) return; // Nessun cambio reale
+function getColor(prio) {
+    if(prio === 'high') return 'var(--danger)';
+    if(prio === 'med') return '#eebb00';
+    if(prio === 'low') return 'var(--info)';
+    return 'var(--gray)';
+}
 
-    // Aggiorna il valore modificato
-    valori[indexModificato] = nuovoValore;
-
-    // Ora dobbiamo bilanciare la differenza sugli ALTRI campi
-    // Non tocchiamo: Fissi, e la riga appena modificata
+function cambiaPriorita(index) {
+    // Cicla: Low -> Med -> High -> Fixed -> Low
+    const current = appData[index].prio;
+    let next = 'low';
+    if(current === 'low') next = 'med';
+    else if(current === 'med') next = 'high';
+    else if(current === 'high') next = 'fixed';
     
-    if (differenza > 0) {
-        // Ho AGGIUNTO minuti (es. ho messo 30 dove c'era 0).
-        // Devo TOGLIERE 30 minuti da altri posti (dai più ricchi).
-        togliMinuti(differenza, indexModificato);
+    appData[index].prio = next;
+    saveData();
+    renderList(); // Ridisegna per mostrare il colore nuovo
+}
+
+function aggiungiRiga() {
+    const nome = prompt("Nome nuova attività:");
+    if (nome) {
+        appData.push({ name: nome, val: 0, prio: 'med' });
+        saveData();
+        renderList();
+        // Scrolla in fondo
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+}
+
+function aggiornaTotale() {
+    const totale = appData.reduce((acc, item) => acc + item.val, 0);
+    const disp = document.getElementById("totalDisplay");
+    disp.innerText = totale + " min";
+    
+    if (totale === 480) {
+        disp.style.color = "var(--primary)";
     } else {
-        // Ho TOLTO minuti (es. ho messo 0 dove c'era 20).
-        // Devo AGGIUNGERE minuti da qualche parte (ai prioritari).
-        aggiungiMinuti(Math.abs(differenza), indexModificato);
+        disp.style.color = "var(--danger)";
     }
-
-    renderTable();
 }
 
-function togliMinuti(quantoTogliere, escludiIndex) {
-    // Cerchiamo di togliere dai valori più alti disponibili (escludendo fissi e quello modificato)
-    // Loop finché non abbiamo tolto tutto
-    while (quantoTogliere > 0) {
-        // Trova l'indice (non fisso e non escluso) che ha il valore più alto
+// --- LOGICA GENERATORE INTELLIGENTE ---
+
+function generaGiornata() {
+    // 1. Reset valori (mantiene i fissi come sono nel loro stato attuale)
+    // Se un elemento è "Fixed", non lo tocchiamo. Gli altri a 0.
+    
+    let minutiTotali = 480;
+    let minutiSpesi = 0;
+
+    // Calcola quanto consumano i fissi
+    appData.forEach(item => {
+        if(item.prio === 'fixed') {
+            minutiSpesi += item.val;
+        } else {
+            item.val = 0; // Resetta gli altri
+        }
+    });
+
+    let daDistribuire = minutiTotali - minutiSpesi;
+
+    // 2. Base Minima Garantita in base alla priorità
+    const highItems = appData.filter(i => i.prio === 'high');
+    const medItems = appData.filter(i => i.prio === 'med');
+    const lowItems = appData.filter(i => i.prio === 'low');
+
+    highItems.forEach(item => { item.val = 40; daDistribuire -= 40; });
+    medItems.forEach(item => { item.val = 20; daDistribuire -= 20; });
+    lowItems.forEach(item => { item.val = 10; daDistribuire -= 10; });
+
+    // Se siamo andati in negativo (troppi fissi/priorità), resetta a 0 per evitare bug
+    if(daDistribuire < 0) daDistribuire = 0; // Soluzione semplice, in realtà bisognerebbe scalare
+
+    // 3. Lotteria per il tempo rimanente
+    let pool = [];
+    // Mettiamo gli indici nell'urna
+    appData.forEach((item, index) => {
+        if(item.prio === 'high') { for(let k=0; k<5; k++) pool.push(index); }
+        else if(item.prio === 'med') { for(let k=0; k<2; k++) pool.push(index); }
+        else if(item.prio === 'low') { pool.push(index); }
+        // Fixed non entra nella lotteria
+    });
+
+    if (pool.length > 0) {
+        while (daDistribuire > 0) {
+            let randomIndex = pool[Math.floor(Math.random() * pool.length)];
+            appData[randomIndex].val += 5;
+            daDistribuire -= 5;
+        }
+    }
+
+    saveData();
+    renderList();
+    aggiornaTotale();
+}
+
+function modificaManuale(input, index) {
+    let nuovoVal = parseInt(input.value) || 0;
+    if (nuovoVal < 0) nuovoVal = 0;
+    
+    let vecchioVal = appData[index].val;
+    let diff = nuovoVal - vecchioVal;
+
+    if (diff === 0) return;
+
+    appData[index].val = nuovoVal;
+
+    // Bilanciamento automatico
+    if (diff > 0) {
+        // Ho aggiunto tempo, devo toglierlo ad altri (preferibilmente non fissi)
+        togliTempo(diff, index);
+    } else {
+        // Ho tolto tempo, devo aggiungerlo ad altri
+        aggiungiTempo(Math.abs(diff), index);
+    }
+
+    saveData();
+    renderList(); // Rirendering per aggiornare gli altri campi
+    aggiornaTotale();
+}
+
+function togliTempo(amount, excludeIdx) {
+    while(amount > 0) {
+        // Trova chi ha più minuti (escluso fissi e se stesso)
         let maxVal = -1;
         let maxIdx = -1;
-
-        for(let i=0; i<valori.length; i++) {
-            if(indiciFissi.includes(i) || i === escludiIndex) continue;
-            if(valori[i] > maxVal) {
-                maxVal = valori[i];
-                maxIdx = i;
-            }
-        }
-
-        // Se non trovo nulla da togliere, esco (il totale sballerà, ma non posso andare in negativo)
-        if (maxIdx === -1 || maxVal === 0) break;
-
-        // Tolgo 5 minuti (o meno se ne mancano meno)
-        let step = (quantoTogliere >= 5) ? 5 : quantoTogliere;
         
-        // Non andare sotto zero
-        if (valori[maxIdx] - step < 0) step = valori[maxIdx];
+        appData.forEach((item, idx) => {
+            if(idx !== excludeIdx && item.prio !== 'fixed') {
+                if(item.val > maxVal) {
+                    maxVal = item.val;
+                    maxIdx = idx;
+                }
+            }
+        });
 
-        valori[maxIdx] -= step;
-        quantoTogliere -= step;
+        if(maxIdx === -1 || maxVal === 0) break; // Non c'è più nulla da togliere
+
+        let step = (amount >= 5) ? 5 : amount;
+        if (appData[maxIdx].val - step < 0) step = appData[maxIdx].val;
+        
+        appData[maxIdx].val -= step;
+        amount -= step;
     }
 }
 
-function aggiungiMinuti(quantoAggiungere, escludiIndex) {
-    // Distribuisce il surplus sulle attività ad alta priorità (o media se serve)
-    // Usa un pool casuale per non accumulare tutto sullo stesso
+function aggiungiTempo(amount, excludeIdx) {
+    // Aggiungi a caso ai non fissi
     let pool = [];
-    highPrio.forEach(i => { if(i !== escludiIndex) pool.push(i); });
-    medPrio.forEach(i => { if(i !== escludiIndex) pool.push(i); });
-    
-    // Se pool vuoto, usa tutto tranne fissi
-    if(pool.length === 0) {
-        for(let i=0; i<valori.length; i++) {
-            if(!indiciFissi.includes(i) && i !== escludiIndex) pool.push(i);
-        }
-    }
+    appData.forEach((item, idx) => {
+        if(idx !== excludeIdx && item.prio !== 'fixed') pool.push(idx);
+    });
 
-    while (quantoAggiungere > 0) {
-        let riga = pool[Math.floor(Math.random() * pool.length)];
-        valori[riga] += 5;
-        quantoAggiungere -= 5;
+    if(pool.length === 0) return;
+
+    while(amount > 0) {
+        let rIdx = pool[Math.floor(Math.random() * pool.length)];
+        appData[rIdx].val += 5;
+        amount -= 5;
     }
 }
 
-// Avvia alla prima apertura
-generaGiornataIniziale();
+// --- FUNZIONE COPIA ---
+function copiaAppunti() {
+    // Crea una stringa con solo i numeri separati da a capo
+    let testo = appData.map(item => item.val).join('\n');
+    
+    navigator.clipboard.writeText(testo).then(function() {
+        showToast();
+    }, function(err) {
+        alert('Errore copia: ' + err);
+    });
+}
 
+function showToast() {
+    var x = document.getElementById("toast");
+    x.className = "show";
+    setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+}
 </script>
 
 </body>
